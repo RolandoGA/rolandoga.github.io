@@ -4,12 +4,16 @@
     <title>Página web de ejemplo</title>
     <style>
         body {
-            background-color: black;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #container {
+            height: 100vh;
+            background-image: linear-gradient(white, black);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
         }
 
         h1 {
@@ -19,6 +23,21 @@
     </style>
 </head>
 <body>
-    <h1>Rol</h1>
+    <div id="container">
+        <h1>Rol</h1>
+    </div>
+
+    <script>
+        var container = document.getElementById('container');
+
+        function handleMouseMove(event) {
+            var mouseX = event.clientX;
+            var windowWidth = window.innerWidth;
+            var percentage = (mouseX / windowWidth) * 100;
+            container.style.backgroundImage = 'linear-gradient(white ' + percentage + '%, black)';
+        }
+
+        window.addEventListener('mousemove', handleMouseMove);
+    </script>
 </body>
 </html>
