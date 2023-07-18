@@ -203,29 +203,32 @@
                 // if (velocity.y > 0.) velocity.y *= (1. - 0.2 * delta);
 
                 // Speed Limits
-                if ( length( velocity ) > limit ) {
+                float lengthVelocity = length( velocity );
+                if ( lengthVelocity > limit ) {
                     velocity = normalize( velocity ) * limit;
                 }
+
+                float fadeSq = clamp(fade * fade, 0.0, 1.0);
 
                 if(mode == 1.0){
 
                     vec3 velTarget =  ((texture2D( fig1, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fade) + velTarget * fade * fade;
+                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
  
                 } else if(mode == 2.0){
 
                     vec3 velTarget =  ((texture2D( fig2, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fade) + velTarget * fade * fade;
+                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
  
                 } else if(mode == 3.0){
 
                     vec3 velTarget =  ((texture2D( fig3, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fade) + velTarget * fade * fade;
+                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
  
-                }
+                } 
 
-                if ( length( velocity ) < 0.01 ) {
-                    velocity *= 1.;
+                if ( lengthVelocity < 0.001 ) {
+                    //velocity = vec3(0.0, 0.0, 0.0);
                 }
 
                 gl_FragColor = vec4( velocity, 1.0 );
@@ -248,12 +251,16 @@
             varying float z;
 
             uniform float time;
+            uniform float fade;
+            uniform float mode;
 
             void main() {
 
                 vec4 tmpPos = texture2D( texturePosition, reference );
                 vec3 pos = tmpPos.xyz;
+
                 vec3 velocity = normalize(texture2D( textureVelocity, reference ).xyz);
+
 
                 vec3 newPosition = position;
 
@@ -462,7 +469,7 @@
             let windowHalfX = window.innerWidth / 2;
             let windowHalfY = window.innerHeight / 2;
 
-            const BOUNDS = 20, BOUNDS_HALF = BOUNDS / 2;
+            const BOUNDS = 100, BOUNDS_HALF = BOUNDS / 2;
 
             let last = performance.now();
 
@@ -485,6 +492,7 @@
                 camera.position.z = 350;
 
                 scene = new THREE.Scene();
+                //scene.background = new THREE.Color( 0x000000 );
                 scene.background = new THREE.Color( 0x6c7784 );
                 scene.fog = new THREE.Fog( 0x6c7784, 100, 1000 );
 
@@ -611,6 +619,8 @@
                     'texturePosition': { value: null },
                     'textureVelocity': { value: null },
                     'time': { value: 1.0 },
+                    'fade': { value: 0.0 },
+                    'mode': { value: 0.0 },
                     'delta': { value: 0.0 }
                 };
 
@@ -707,10 +717,11 @@
                 const now = performance.now();
                 let delta = ( now - last ) / 1000;
 
-                if(fade >= 1){
+                if(fade >= 1.0){
+                    fade = 1.0;
                     
                 } else{
-                 fade += delta*1;
+                 fade += delta*1.0;
                 }
 
                 if(prevMode != modeRef){
@@ -732,6 +743,8 @@
                 velocityUniforms[ 'delta' ].value = delta;
                 velocityUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'time' ].value = now;
+                birdUniforms[ 'fade' ].value = fade;
+                birdUniforms[ 'mode' ].value = modeRef;
                 birdUniforms[ 'delta' ].value = delta;
 
                 velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
