@@ -42,7 +42,7 @@
                     length( velocity.xz ) * delta * 3. +
                     max( velocity.y, 0.0 ) * delta * 6. ), 62.83 );
 
-                gl_FragColor = vec4( position + velocity * delta * 15. , phase );
+                gl_FragColor = vec4( position + velocity * delta * 20. , phase );
 
             }
 
@@ -136,7 +136,7 @@
 
 
                 // if (testing == 0.0) {}
-                // if ( rand( uv + time ) < freedomFactor ) {}
+                //if ( rand( uv + time ) < freedomFactor ) {}
 
 
                 // Attract flocks to the center
@@ -224,6 +224,10 @@
  
                 }
 
+                if ( length( velocity ) < 0.01 ) {
+                    velocity *= 1.;
+                }
+
                 gl_FragColor = vec4( velocity, 1.0 );
 
             }
@@ -253,7 +257,7 @@
 
                 vec3 newPosition = position;
 
-                if ( birdVertex == 4.0 || birdVertex == 7.0 ) {
+                if ( birdVertex == 4.0 || birdVertex == 5.0  || birdVertex == 7.0  || birdVertex == 8.0 ) {
                     // flap wings
                     newPosition.y = sin( tmpPos.w ) * 5.;
                 }
@@ -383,23 +387,35 @@
 
                         verts_push(
                             0, - 0, - 20,
-                            0, 4, - 20,
+                            0, 3, - 20,
                             0, 0, 30
                         );
 
                         // Wings
 
                         verts_push(
-                            0, 0, - 15,
-                            - wingsSpan, 0, 0,
-                            0, 0, 15
+                            0, 0, 0,
+                            - wingsSpan, 0, 20,
+                            - wingsSpan * 0.3, 0, -20
                         );
 
+                        // verts_push(
+                        //     0, 0, - 15,
+                        //     - wingsSpan, 0, 0,
+                        //     0, 0, 15
+                        // );
+
                         verts_push(
-                            0, 0, 15,
-                            wingsSpan, 0, 0,
-                            0, 0, - 15
+                            0, 0, 0,
+                            wingsSpan * 0.3, 0, -20,
+                            wingsSpan, 0, 20
                         );
+
+                        // verts_push(
+                        //     0, 0, 15,
+                        //     wingsSpan, 0, 0,
+                        //     0, 0, - 15
+                        // );
 
                     }
 
