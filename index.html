@@ -60,6 +60,7 @@
             uniform float freedomFactor;
             uniform float mode;
             uniform vec3 predator;
+            uniform float fade;
 
             uniform sampler2D fig1;
             uniform sampler2D fig2;
@@ -208,15 +209,18 @@
 
                 if(mode == 1.0){
 
-                    velocity =  ((texture2D( fig1, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    vec3 velTarget =  ((texture2D( fig1, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    velocity = velocity * (1.0 - fade) + velTarget * fade;
  
                 } else if(mode == 2.0){
 
-                    velocity =  ((texture2D( fig2, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    vec3 velTarget =  ((texture2D( fig2, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    velocity = velocity * (1.0 - fade) + velTarget * fade;
  
                 } else if(mode == 3.0){
 
-                    velocity =  ((texture2D( fig3, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    vec3 velTarget =  ((texture2D( fig3, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
+                    velocity = velocity * (1.0 - fade) + velTarget * fade;
  
                 }
 
@@ -437,6 +441,11 @@
             let camera, scene, renderer;
             let mouseX = 0, mouseY = 0;
 
+            let fade = 0.0;
+
+            let prevMode = 0.0;
+            let modeRef = 0.0;
+
             let windowHalfX = window.innerWidth / 2;
             let windowHalfY = window.innerHeight / 2;
 
@@ -502,6 +511,7 @@
                     velocityUniforms[ 'cohesionDistance' ].value = effectController.cohesion;
                     velocityUniforms[ 'freedomFactor' ].value = effectController.freedom;
                     velocityUniforms[ 'mode' ].value = effectController.mode;
+                    modeRef = effectController.mode;
 
                 };
 
@@ -554,6 +564,7 @@
                 velocityUniforms[ 'cohesionDistance' ] = { value: 1.0 };
                 velocityUniforms[ 'freedomFactor' ] = { value: 1.0 };
                 velocityUniforms[ 'mode' ] = { value: 0.0 };
+                velocityUniforms[ 'fade' ] = { value: 0.0 };
                 velocityUniforms[ 'predator' ] = { value: new THREE.Vector3() };
 
                 velocityUniforms[ 'fig1' ] = { value: new THREE.TextureLoader().load('images/tri.tiff') };
@@ -683,6 +694,22 @@
                 const now = performance.now();
                 let delta = ( now - last ) / 1000;
 
+                if(fade >= 1){
+                    
+                } else{
+                 fade += delta*1;
+                }
+
+                if(prevMode != modeRef){
+                    fade = 0.0;
+                    console.log('holi');
+                }
+
+                console.log(fade);
+
+                prevMode = modeRef;
+
+                
                 if ( delta > 1 ) delta = 1; // safety cap on large deltas
                 last = now;
 
@@ -690,6 +717,7 @@
                 positionUniforms[ 'delta' ].value = delta;
                 velocityUniforms[ 'time' ].value = now;
                 velocityUniforms[ 'delta' ].value = delta;
+                velocityUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'time' ].value = now;
                 birdUniforms[ 'delta' ].value = delta;
 
