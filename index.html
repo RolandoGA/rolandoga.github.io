@@ -343,6 +343,7 @@
 
             import Stats from 'three/addons/libs/stats.module.js';
             import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
             import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 
@@ -501,6 +502,14 @@
             let camera, scene, renderer;
             let mouseX = 0, mouseY = 0;
 
+
+            const loader = new GLTFLoader();
+
+            // Optional: Provide a DRACOLoader instance to decode compressed mesh data
+            // const dracoLoader = new DRACOLoader();
+            // dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );
+            // loader.setDRACOLoader( dracoLoader );
+
             let fade = 0.0;
 
             let prevMode = 0.0;
@@ -528,13 +537,14 @@
                 container = document.createElement( 'div' );
                 document.body.appendChild( container );
 
-                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 3000 );
+                camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 3000 );
                 camera.position.z = 350;
+                camera.rotation.x = .1;
 
                 scene = new THREE.Scene();
                 //scene.background = new THREE.Color( 0x000000 );
-                scene.background = new THREE.Color( 0x6c7784 );
-                scene.fog = new THREE.Fog( 0x6c7784, 100, 1000 );
+                scene.background = new THREE.Color( 0xC8D4E1 );
+                scene.fog = new THREE.Fog( 0xC8D4E1, 100, 4000 );
 
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio( window.devicePixelRatio );
@@ -551,6 +561,36 @@
                 container.addEventListener( 'pointermove', onPointerMove );
 
                 //
+
+                loader.load(
+                    // resource URL
+                    'models/escenario4.glb',
+                    // called when the resource is loaded
+                    function ( gltf ) {
+
+                        gltf.scene.scale.set(40.0, 40.0, 40.0);
+                        gltf.scene.position.set(0.0, -140.0, 0.0);
+
+                        scene.add( gltf.scene );
+
+                        gltf.scene; // THREE.Group
+                        gltf.scenes; // Array<THREE.Group>
+                        gltf.asset; // Object
+
+                    },
+                    // called while loading is progressing
+                    function ( xhr ) {
+
+                        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+                    },
+                    // called when loading has errors
+                    function ( error ) {
+
+                        console.log( 'An error happened' );
+
+                    }
+                );
 
                 window.addEventListener( 'resize', onWindowResize );
 
