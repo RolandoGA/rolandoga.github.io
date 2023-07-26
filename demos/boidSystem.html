@@ -249,6 +249,7 @@
             uniform sampler2D textureVelocity;
 
             varying vec4 vColor;
+            varying float y;
             varying float z;
 
             uniform float time;
@@ -301,6 +302,7 @@
                 newPosition += pos;
 
                 z = newPosition.z;
+                y = newPosition.y;
 
                 vColor = vec4( birdColor, 1.0 );
                 gl_Position = projectionMatrix *  viewMatrix  * vec4( newPosition, 1.0 );
@@ -312,12 +314,13 @@
         <script type="x-shader/x-fragment" id="birdFS">
 
             varying vec4 vColor;
+            varying float y;
             varying float z;
 
             uniform vec3 color;
 
             void main() {
-                vec3 z2 = ( 800. - z ) / 800. * vColor.xyz;
+                vec3 z2 = ( 500. - z ) / 500. * vColor.xyz + ( y ) / 500.;
                 gl_FragColor = vec4( z2, 1. );
 
             }
@@ -529,9 +532,9 @@
                 container = document.createElement( 'div' );
                 document.body.appendChild( container );
 
-                camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 3000 );
+                camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 3000 );
                 camera.position.z = 350;
-                camera.rotation.x = .1;
+                camera.rotation.x = .0;
 
                 scene = new THREE.Scene();
                 //scene.background = new THREE.Color( 0x000000 );
@@ -556,12 +559,12 @@
 
                 loader.load(
                     // resource URL
-                    '../models/escenario4.glb',
+                    '../models/escenario5.glb',
                     // called when the resource is loaded
                     function ( gltf ) {
 
-                        gltf.scene.scale.set(40.0, 40.0, 40.0);
-                        gltf.scene.position.set(0.0, -140.0, 0.0);
+                        gltf.scene.scale.set(70.0, 70.0, 70.0);
+                        gltf.scene.position.set(0.0, -250.0, -150.0);
 
                         scene.add( gltf.scene );
 
