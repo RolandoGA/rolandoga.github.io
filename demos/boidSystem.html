@@ -320,7 +320,11 @@
             uniform vec3 color;
 
             void main() {
-                vec3 z2 = ( 500. - z ) / 500. * vColor.xyz + ( y ) / 500.;
+
+                vec3 z2 =
+                ( 600. - z ) / 600.
+                * vColor.xyz
+                + ( y  ) / 800.;
                 gl_FragColor = vec4( z2, 1. );
 
             }
@@ -345,6 +349,7 @@
             import Stats from 'three/addons/libs/stats.module.js';
             import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
             import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 
@@ -389,7 +394,7 @@
 
                     }
 
-                    const wingsSpan = 20;
+                    const wingsSpan = 30;
 
                     for ( let f = 0; f < BIRDS; f ++ ) {
 
@@ -397,8 +402,8 @@
 
                         verts_push(
                             0, - 0, - 20,
-                            0, 3, - 20,
-                            0, 0, 30
+                            0, 4, 0,
+                            0, 0, 15
                         );
 
                         // Wings
@@ -449,9 +454,19 @@
 
                         birdVertex.array[ v ] = v % 9;
 
-                        let r = Math.random()*.5 + 0.5;
-                        let g = Math.random()*.9 + 0.1;
-                        let b = Math.random()*.7 + 0.1; 
+                        let r = Math.random()*.9 + 0.1;
+                        let g = Math.random()*.6 + 0.1;
+                        let b = Math.random()*.6 + 0.1; 
+
+                        //Purple
+                        //let r = Math.random()*.6 + 0.4;
+                        //let g = Math.random()*.7 + 0.0;
+                        //let b = Math.random()*.9 + 0.1; 
+
+                        //Orangish
+                        // let r = Math.random()*.5 + 0.5;
+                        // let g = Math.random()*.9 + 0.1;
+                        // let b = Math.random()*.7 + 0.1; 
 
                         
                         if(pointIndex < 3.0){
@@ -491,7 +506,7 @@
 
                     }
 
-                    this.scale( 0.4, 0.4, 0.4 );
+                    this.scale( 0.5, 0.5, 0.5 );
 
                 }
 
@@ -532,14 +547,31 @@
                 container = document.createElement( 'div' );
                 document.body.appendChild( container );
 
-                camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 3000 );
-                camera.position.z = 350;
-                camera.rotation.x = .0;
+                camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 5000 );
+                camera.position.x = 0;
+                camera.position.y = -150;
+                camera.position.z = 900;
+
+                camera.rotation.x = .3;
+                camera.rotation.y = .0;
 
                 scene = new THREE.Scene();
                 //scene.background = new THREE.Color( 0x000000 );
-                scene.background = new THREE.Color( 0xC8D4E1 );
-                scene.fog = new THREE.Fog( 0xC8D4E1, 100, 4000 );
+                scene.background = new THREE.Color( 0x000000 );
+                scene.fog = new THREE.Fog( 0x000000, -800, 3000 );
+
+
+
+                //////Control
+
+                const controls = new OrbitControls( camera, container );
+                controls.addEventListener( 'change', render ); // use if there is no animation loop
+                controls.rotateSpeed = 0.5;
+                controls.target.set( 0, 0, 0 );
+                controls.update();
+
+                /////
+
 
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio( window.devicePixelRatio );
@@ -559,12 +591,12 @@
 
                 loader.load(
                     // resource URL
-                    '../models/escenario5.glb',
+                    '../models/escenario6.glb',
                     // called when the resource is loaded
                     function ( gltf ) {
 
-                        gltf.scene.scale.set(70.0, 70.0, 70.0);
-                        gltf.scene.position.set(0.0, -250.0, -150.0);
+                        gltf.scene.scale.set(90.0, 90.0, 90.0);
+                        gltf.scene.position.set(0.0, -300.0, -0.0);
 
                         scene.add( gltf.scene );
 
@@ -589,13 +621,22 @@
 
                 window.addEventListener( 'resize', onWindowResize );
 
+                window.addEventListener(
+                  "keydown",
+                  (event) => {
+                    console.log(camera.position);
+                    console.log(camera.rotation);
+                  },
+                  true,
+                );
+
                 const gui = new GUI();
 
 
                 const effectController = {
-                    separation: 20.0,
-                    alignment: 20.0,
-                    cohesion: 20.0,
+                    separation: 50.0,
+                    alignment: 2.0,
+                    cohesion: 100.0,
                     freedom: 0.75,
                     mode: 0
                 };
@@ -805,6 +846,8 @@
                 }
 
                 console.log(fade);
+                //console.log(camera.position);
+                //console.log(camera.rotation);
 
                 prevMode = modeRef;
 
