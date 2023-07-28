@@ -61,10 +61,17 @@
             uniform float mode;
             uniform vec3 predator;
             uniform float fade;
+            uniform float speed;
 
             uniform sampler2D fig1;
             uniform sampler2D fig2;
             uniform sampler2D fig3;
+            uniform sampler2D fig4;
+
+            float sepDist;
+            float aliDist;
+            float cohDist;
+            float factor;
 
             const float width = resolution.x;
             const float height = resolution.y;
@@ -79,10 +86,12 @@
             float separationThresh = 0.45;
             float alignmentThresh = 0.65;
 
+            float centerForce;
+
             const float UPPER_BOUNDS = BOUNDS;
             const float LOWER_BOUNDS = -UPPER_BOUNDS;
 
-            const float SPEED_LIMIT = 9.0;
+            const float SPEED_LIMIT = 7.0;
 
             float rand( vec2 co ){
                 return fract( sin( dot( co.xy, vec2(12.9898,78.233) ) ) * 43758.5453 );
@@ -90,9 +99,52 @@
 
             void main() {
 
-                zoneRadius = separationDistance + alignmentDistance + cohesionDistance;
-                separationThresh = separationDistance / zoneRadius;
-                alignmentThresh = ( separationDistance + alignmentDistance ) / zoneRadius;
+                switch(int(mode)){
+                    case 0:
+                        sepDist = 0.; //
+                        aliDist = 0.; //
+                        cohDist = 0.; //
+                        factor = 0.;
+                        break;
+                    case 1:
+                        sepDist = 40.; //
+                        aliDist = 0.; //
+                        cohDist = 0.; //
+                        factor = 0.;
+                        break;
+                    case 2:
+                        sepDist = 35.; //
+                        aliDist = 2.; //
+                        cohDist = 18.; //
+                        factor = 0.025;
+                        break;
+                    case 3:
+                        sepDist = 35.; //
+                        aliDist = 2.; //
+                        cohDist = 18.; //
+                        factor = 0.025;
+                        break;
+                    case 4:
+                        sepDist = 35.; //
+                        aliDist = 2.; //
+                        cohDist = 18.; //
+                        factor = 0.025;
+                        break;
+                    case 5:
+                        sepDist = 35.; //
+                        aliDist = 2.; //
+                        cohDist = 18.; //
+                        factor = 0.025;
+                        break;
+                }
+
+                //sepDist = separationDistance; //
+                //aliDist = alignmentDistance; //
+                //cohDist = cohesionDistance; //
+
+                zoneRadius = sepDist + aliDist + cohDist;
+                separationThresh = sepDist / zoneRadius;
+                alignmentThresh = ( sepDist + aliDist ) / zoneRadius;
                 zoneRadiusSquared = zoneRadius * zoneRadius;
 
 
@@ -106,16 +158,19 @@
                 vec3 dir; // direction
                 float distSquared;
 
-                float separationSquared = separationDistance * separationDistance;
-                float cohesionSquared = cohesionDistance * cohesionDistance;
+                float separationSquared = sepDist * sepDist;
+                float cohesionSquared = cohDist * cohDist;
 
                 float f;
                 float percent;
 
-                vec3 velocity = selfVelocity;
-                //vec3 zero = vec3(0.)
+                vec3 velFlock = selfVelocity;
+                vec3 velTarget = selfVelocity;
 
-                float limit = SPEED_LIMIT;
+
+                ////NEED FOR SPEED
+
+                float limit = speed;
 
                 dir = predator * UPPER_BOUNDS - selfPosition;
                 dir.z = 0.;
@@ -127,26 +182,60 @@
                 float preyRadiusSq = preyRadius * preyRadius;
 
 
-                // move birds away from predator
-                //if ( dist < preyRadius ) {
-                //
-                //    f = ( distSquared / preyRadiusSq - 1.0 ) * delta * 100.;
-                //    velocity += normalize( dir ) * f;
-                //    limit += 5.0;
-                //}
-
-
-                // if (testing == 0.0) {}
-                //if ( rand( uv + time ) < freedomFactor ) {}
-
-
                 // Attract flocks to the center
                 vec3 central = vec3( 0., 0., 0. );
+
+
+                float fadeSq = clamp(fade * fade, 0.0, 1.0);
+
+
+                //separationDistance
+                //alignmentDistance
+                //cohesionDistance
+
+                if(mode == 0.0){
+                    central = vec3( 0., 900., 0. );
+                    centerForce = 5.;
+                     
+                } else if(mode == 1.0){
+                    centerForce = 10.;
+                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.01;
+                    velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
+                     
+                } else if(mode == 2.0){
+
+                    //mode viz 1
+                    vec3 vel =  ((texture2D( fig1, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
+ 
+                } else if(mode == 3.0){
+                    
+                    //mode viz 2
+
+                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
+ 
+                } else if(mode == 4.0){
+
+                    //mode viz 3
+                    vec3 vel =  ((texture2D( fig3, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
+ 
+                } else if(mode == 5.0){
+
+                    //mode viz 4
+                    vec3 vel =  ((texture2D( fig4, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
+ 
+                } 
+
+
+
                 dir = selfPosition - central;
                 dist = length( dir );
 
                 dir.y *= 2.5;
-                velocity -= normalize( dir ) * delta * 10.;
+                velFlock -= normalize( dir ) * delta * centerForce;
 
                 for ( float y = 0.0; y < height; y++ ) {
                     for ( float x = 0.0; x < width; x++ ) {
@@ -169,7 +258,7 @@
 
                             // Separation - Move apart for comfort
                             f = ( separationThresh / percent - 1.0 ) * delta;
-                            velocity -= normalize( dir ) * f;
+                            velFlock -= normalize( dir ) * f;
 
                         } else if ( percent < alignmentThresh ) { // high
 
@@ -180,7 +269,7 @@
                             birdVelocity = texture2D( textureVelocity, ref ).xyz;
 
                             f = ( 0.5 - cos( adjustedPercent * PI_2 ) * 0.5 + 0.5 ) * delta;
-                            velocity += normalize( birdVelocity ) * f;
+                            velFlock += normalize( birdVelocity ) * f;
 
                         } else {
 
@@ -192,7 +281,7 @@
 
                             f = ( 0.5 - ( cos( adjustedPercent * PI_2 ) * -0.5 + 0.5 ) ) * delta;
 
-                            velocity += normalize( dir ) * f;
+                            velFlock += normalize( dir ) * f;
 
                         }
 
@@ -200,8 +289,14 @@
 
                 }
 
-                // this make tends to fly around than down or up
-                // if (velocity.y > 0.) velocity.y *= (1. - 0.2 * delta);
+
+
+
+                /////
+                //  VEL COMP
+                ////
+
+                vec3 velocity = mix(velFlock, velTarget, factor);
 
                 // Speed Limits
                 float lengthVelocity = length( velocity );
@@ -209,26 +304,8 @@
                     velocity = normalize( velocity ) * limit;
                 }
 
-                float fadeSq = clamp(fade * fade, 0.0, 1.0);
 
-                if(mode == 1.0){
-
-                    vec3 velTarget =  ((texture2D( fig1, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
- 
-                } else if(mode == 2.0){
-
-                    vec3 velTarget =  ((texture2D( fig2, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
- 
-                } else if(mode == 3.0){
-
-                    vec3 velTarget =  ((texture2D( fig3, uv ).xyz * 400.0 - 200.0) - selfPosition) * 0.15;
-                    velocity = velocity * (1.0 - fadeSq) + velTarget * fadeSq;
- 
-                } 
-
-                if ( length( velocity ) < 0.001 && mode != 0.0 && fade > 0.99) {
+                if ( length( velocity ) < 0.001 && mode > 1.0 && fade > 0.99) {
                     velocity *= vec3(0.7, 0.7, 0.7);
                 }
 
@@ -251,6 +328,7 @@
             uniform sampler2D statColor01;
             uniform sampler2D statColor02;
             uniform sampler2D statColor03;
+            uniform sampler2D statColor04;
 
             varying vec4 vColor;
             varying float y;
@@ -315,18 +393,26 @@
                 vec3 color1;
                 vec3 color2;
 
+                vec3 fadeColor = vec3(0.31, 0.31, 0.31);
+
                 switch(int(mode)){
                     case 0:
                         color1 = birdColor;
                         break;
                     case 1:
-                        color1 = texture2D( statColor01, reference ).xyz;
+                        color1 = birdColor;
                         break;
                     case 2:
-                        color1 = texture2D( statColor02, reference ).xyz;
+                        color1 = texture2D( statColor01, reference ).xyz;
                         break;
                     case 3:
+                        color1 = texture2D( statColor02, reference ).xyz;
+                        break;
+                    case 4:
                         color1 = texture2D( statColor03, reference ).xyz;
+                        break;
+                    case 5:
+                        color1 = texture2D( statColor04, reference ).xyz;
                         break;
                 }
 
@@ -335,13 +421,19 @@
                         color2 = birdColor;
                         break;
                     case 1:
-                        color2 = texture2D( statColor01, reference ).xyz;
+                        color2 = birdColor;
                         break;
                     case 2:
-                        color2 = texture2D( statColor02, reference ).xyz;
+                        color2 = texture2D( statColor01, reference ).xyz;
                         break;
                     case 3:
+                        color2 = texture2D( statColor02, reference ).xyz;
+                        break;
+                    case 4:
                         color2 = texture2D( statColor03, reference ).xyz;
+                        break;
+                    case 5:
+                        color2 = texture2D( statColor04, reference ).xyz;
                         break;
                 }    
 
@@ -396,12 +488,10 @@
 
             import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
 
-            /* TEXTURE WIDTH FOR SIMULATION */
             const WIDTH = 16;
 
             const BIRDS = WIDTH * WIDTH;
 
-            // Custom Geometry - using 3 triangles each. No UVs, no normals currently.
             class BirdGeometry extends THREE.BufferGeometry {
 
                 constructor() {
@@ -422,8 +512,6 @@
                     this.setAttribute( 'reference', references );
                     this.setAttribute( 'birdVertex', birdVertex );
 
-                    // this.setAttribute( 'normal', new Float32Array( points * 3 ), 3 );
-
 
                     let v = 0;
 
@@ -442,7 +530,6 @@
                     for ( let f = 0; f < BIRDS; f ++ ) {
 
                         // Body
-
                         verts_push(
                             0, - 0, - 20,
                             0, 4, 0,
@@ -450,30 +537,17 @@
                         );
 
                         // Wings
-
                         verts_push(
                             0, 0, 0,
                             - wingsSpan, 0, 10,
                             - wingsSpan * 0.3, 0, -20
                         );
 
-                        // verts_push(
-                        //     0, 0, - 15,
-                        //     - wingsSpan, 0, 0,
-                        //     0, 0, 15
-                        // );
-
                         verts_push(
                             0, 0, 0,
                             wingsSpan * 0.3, 0, -20,
                             wingsSpan, 0, 10
                         );
-
-                        // verts_push(
-                        //     0, 0, 15,
-                        //     wingsSpan, 0, 0,
-                        //     0, 0, - 15
-                        // );
 
                     }
 
@@ -535,7 +609,7 @@
 
                     }
 
-                    this.scale( 0.5, 0.5, 0.5 );
+                    this.scale( 0.6, 0.6, 0.6 );
 
                 }
 
@@ -551,6 +625,9 @@
 
             let fade = 0.0;
 
+            let speed = 20.0;
+            let speedTarget = 0.0;
+
             let modeDelayed = 0.0;
             let prevMode = 0.0;
             let modeRef = 0.0;
@@ -558,7 +635,7 @@
             let windowHalfX = window.innerWidth / 2;
             let windowHalfY = window.innerHeight / 2;
 
-            const BOUNDS = 100, BOUNDS_HALF = BOUNDS / 2;
+            const BOUNDS = 10, BOUNDS_HALF = BOUNDS / 2;
 
             let last = performance.now();
 
@@ -622,9 +699,7 @@
                 //
 
                 loader.load(
-                    // resource URL
                     '../models/escenario7.glb',
-                    // called when the resource is loaded
                     function ( gltf ) {
 
                         gltf.scene.scale.set(90.0, 90.0, 90.0);
@@ -653,18 +728,83 @@
 
                 window.addEventListener( 'resize', onWindowResize );
 
+
+                const gui = new GUI();
+
+                const effectController = {
+                    separation: 20.0,
+                    alignment: 0.0,
+                    cohesion: 0.0,
+                    freedom: 0.0
+                };
+
+                const valuesChanger = function () {
+
+                    velocityUniforms[ 'separationDistance' ].value = effectController.separation;
+                    velocityUniforms[ 'alignmentDistance' ].value = effectController.alignment;
+                    velocityUniforms[ 'cohesionDistance' ].value = effectController.cohesion;
+                    velocityUniforms[ 'freedomFactor' ].value = effectController.freedom;
+
+                };
+
+                valuesChanger();
+
+                gui.add( effectController, 'separation', 0.0, 100.0, 1.0 ).onChange( valuesChanger );
+                gui.add( effectController, 'alignment', 0.0, 100, 0.001 ).onChange( valuesChanger );
+                gui.add( effectController, 'cohesion', 0.0, 100, 0.025 ).onChange( valuesChanger );
+                gui.add( effectController, 'freedom', 0.0, 1.0, 0.025 ).onChange( valuesChanger );
+                gui.close();
+
+
+
                 window.addEventListener(
                   "keydown",
                   (event) => {
                     switch(event.keyCode){
+                        case 48:
+                            prevMode = modeRef;
+                            modeRef = 0.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode stand by');
+                            break;
+                        case 49:
+                            prevMode = modeRef;
+                            modeRef = 1.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode seleccion');
+                            break;
+                        case 50:
+                            prevMode = modeRef;
+                            modeRef = 2.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode viz1');
+                            break;
+                        case 51:
+                            prevMode = modeRef;
+                            modeRef = 3.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode viz2');
+                            break;
+                        case 52:
+                            prevMode = modeRef;
+                            modeRef = 4.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode viz3');
+                            break;
+                        case 53:
+                            prevMode = modeRef;
+                            modeRef = 5.;
+                            velocityUniforms[ 'mode' ].value = modeRef;
+                            console.log('Mode viz4');
+                            break;
                         case 67:
-                        console.log(camera.position);
-                        console.log(camera.rotation);
-                        break;
+                            console.log(camera.position);
+                            console.log(camera.rotation);
+                            break;
                         case 77:
                             prevMode = modeRef;
                             modeRef++;
-                            modeRef %= 4;
+                            modeRef %= 6;
                             velocityUniforms[ 'mode' ].value = modeRef;
                             console.log(modeRef + ' ' + prevMode);
                         break;
@@ -676,41 +816,6 @@
                   true,
                 );
 
-                const gui = new GUI();
-
-
-                const effectController = {
-                    separation: 50.0,
-                    alignment: 2.0,
-                    cohesion: 100.0,
-                    freedom: 0.75,
-                    mode: 0
-                };
-
-                const valuesChanger = function () {
-
-                    velocityUniforms[ 'separationDistance' ].value = effectController.separation;
-                    velocityUniforms[ 'alignmentDistance' ].value = effectController.alignment;
-                    velocityUniforms[ 'cohesionDistance' ].value = effectController.cohesion;
-                    velocityUniforms[ 'freedomFactor' ].value = effectController.freedom;
-                    velocityUniforms[ 'mode' ].value = effectController.mode;
-                    
-                    if(effectController.mode != modeRef){
-                        prevMode = modeRef;
-                        modeRef = effectController.mode;
-                        console.log(modeRef + ' ' + prevMode);
-                    }
-
-                };
-
-                valuesChanger();
-
-                gui.add( effectController, 'separation', 0.0, 100.0, 1.0 ).onChange( valuesChanger );
-                gui.add( effectController, 'alignment', 0.0, 100, 0.001 ).onChange( valuesChanger );
-                gui.add( effectController, 'cohesion', 0.0, 100, 0.025 ).onChange( valuesChanger );
-                gui.add( effectController, 'freedom', 0.0, 1.0, 0.025 ).onChange( valuesChanger );
-                gui.add( effectController, 'mode', 0.0, 3.0, 1.0 ).onChange( valuesChanger );
-                gui.close();
 
                 initBirds();
 
@@ -750,6 +855,7 @@
                 velocityUniforms[ 'alignmentDistance' ] = { value: 1.0 };
                 velocityUniforms[ 'cohesionDistance' ] = { value: 1.0 };
                 velocityUniforms[ 'freedomFactor' ] = { value: 1.0 };
+                velocityUniforms[ 'speed' ] = { value: 1.0 };
                 velocityUniforms[ 'mode' ] = { value: 0.0 };
                 velocityUniforms[ 'fade' ] = { value: 0.0 };
                 velocityUniforms[ 'predator' ] = { value: new THREE.Vector3() };
@@ -757,6 +863,7 @@
                 velocityUniforms[ 'fig1' ] = { value: new THREE.TextureLoader().load('../images/tri.png') };
                 velocityUniforms[ 'fig2' ] = { value: new THREE.TextureLoader().load('../images/o.png') };
                 velocityUniforms[ 'fig3' ] = { value: new THREE.TextureLoader().load('../images/eme.png') };
+                velocityUniforms[ 'fig4' ] = { value: new THREE.TextureLoader().load('../images/viz4.png') };
 
                 velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed( 2 );
 
@@ -787,6 +894,7 @@
                     'statColor01': { value: new THREE.TextureLoader().load('../images/triColor.png') },
                     'statColor02': { value: new THREE.TextureLoader().load('../images/oColor.png') },
                     'statColor03': { value: new THREE.TextureLoader().load('../images/emeColor.png') },
+                    'statColor04': { value: new THREE.TextureLoader().load('../images/viz4Color.png') },
                     'time': { value: 1.0 },
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
@@ -819,7 +927,7 @@
                 for ( let k = 0, kl = theArray.length; k < kl; k += 4 ) {
 
                     const x = Math.random() * BOUNDS - BOUNDS_HALF;
-                    const y = Math.random() * BOUNDS - BOUNDS_HALF;
+                    const y = Math.random() * BOUNDS - BOUNDS_HALF + 900.;
                     const z = Math.random() * BOUNDS - BOUNDS_HALF;
 
                     theArray[ k + 0 ] = x;
@@ -876,7 +984,6 @@
             function animate() {
 
                 requestAnimationFrame( animate );
-
                 render();
                 stats.update();
 
@@ -900,8 +1007,32 @@
                 }
 
 
-                modeDelayed = modeRef;
+                switch( ~ ~ modeRef){
+                    case 0:
+                        speedTarget = 2.0;
+                        break;
+                    case 1:
+                        speedTarget = 10.0;
+                        break;
+                    case 2:
+                        speedTarget = 7.0;
+                        break;
+                    case 3:
+                        speedTarget = 7.0;
+                        break;
+                    case 4:
+                        speedTarget = 7.0;
+                        break;
+                    case 5:
+                        speedTarget = 7.0;
+                        break;
+                }
 
+                speed += ( speedTarget - speed ) * delta * 1.0;
+                console.log(speed);
+
+
+                modeDelayed = modeRef;
 
                 //console.log(modeRef + ' ' + prevMode);
                 
@@ -913,6 +1044,7 @@
                 velocityUniforms[ 'time' ].value = now;
                 velocityUniforms[ 'delta' ].value = delta;
                 velocityUniforms[ 'fade' ].value = fade;
+                velocityUniforms[ 'speed' ].value = speed;
                 birdUniforms[ 'time' ].value = now;
                 birdUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'mode' ].value = modeRef;
