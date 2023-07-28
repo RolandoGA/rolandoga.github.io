@@ -248,6 +248,10 @@
             uniform sampler2D texturePosition;
             uniform sampler2D textureVelocity;
 
+            uniform sampler2D statColor01;
+            uniform sampler2D statColor02;
+            uniform sampler2D statColor03;
+
             varying vec4 vColor;
             varying float y;
             varying float z;
@@ -255,6 +259,7 @@
             uniform float time;
             uniform float fade;
             uniform float mode;
+            uniform float prevMode;
 
             void main() {
 
@@ -304,7 +309,45 @@
                 z = newPosition.z;
                 y = newPosition.y;
 
-                vColor = vec4( birdColor, 1.0 );
+                //vColor = vec4( birdColor, 1.0 );
+                //vColor = vec4( texture2D( statColor01, reference ).xyz, 1.0 );
+
+                vec3 color1;
+                vec3 color2;
+
+                switch(int(mode)){
+                    case 0:
+                        color1 = birdColor;
+                        break;
+                    case 1:
+                        color1 = texture2D( statColor01, reference ).xyz;
+                        break;
+                    case 2:
+                        color1 = texture2D( statColor02, reference ).xyz;
+                        break;
+                    case 3:
+                        color1 = texture2D( statColor03, reference ).xyz;
+                        break;
+                }
+
+                switch(int(prevMode)){
+                    case 0:
+                        color2 = birdColor;
+                        break;
+                    case 1:
+                        color2 = texture2D( statColor01, reference ).xyz;
+                        break;
+                    case 2:
+                        color2 = texture2D( statColor02, reference ).xyz;
+                        break;
+                    case 3:
+                        color2 = texture2D( statColor03, reference ).xyz;
+                        break;
+                }    
+
+                vec3 mixColor = mix(color2, color1, fade);
+
+                vColor = vec4( mixColor, 1.0 );
                 gl_Position = projectionMatrix *  viewMatrix  * vec4( newPosition, 1.0 );
             }
 
@@ -444,10 +487,6 @@
                         const x = ( birdIndex % WIDTH ) / WIDTH;
                         const y = ~ ~ ( birdIndex / WIDTH ) / WIDTH;
 
-                        // const c = new THREE.Color(
-                        //     0x66FF66 +
-                        //     ~ ~ ( v / 9 ) / BIRDS * 0x660000
-                        // );
 
                         references.array[ v * 2 ] = x;
                         references.array[ v * 2 + 1 ] = y;
@@ -457,16 +496,6 @@
                         let r = Math.random()*.9 + 0.1;
                         let g = Math.random()*.6 + 0.1;
                         let b = Math.random()*.6 + 0.1; 
-
-                        //Purple
-                        //let r = Math.random()*.6 + 0.4;
-                        //let g = Math.random()*.7 + 0.0;
-                        //let b = Math.random()*.9 + 0.1; 
-
-                        //Orangish
-                        // let r = Math.random()*.5 + 0.5;
-                        // let g = Math.random()*.9 + 0.1;
-                        // let b = Math.random()*.7 + 0.1; 
 
                         
                         if(pointIndex < 3.0){
@@ -522,6 +551,7 @@
 
             let fade = 0.0;
 
+            let modeDelayed = 0.0;
             let prevMode = 0.0;
             let modeRef = 0.0;
 
@@ -535,6 +565,9 @@
             let gpuCompute;
             let velocityVariable;
             let positionVariable;
+            
+            let colorVariable;
+
             let positionUniforms;
             let velocityUniforms;
             let birdUniforms;
@@ -556,7 +589,6 @@
                 camera.rotation.y = .0;
 
                 scene = new THREE.Scene();
-                //scene.background = new THREE.Color( 0x000000 );
                 scene.background = new THREE.Color( 0x000000 );
                 scene.fog = new THREE.Fog( 0x000C05, -800, 3500 );
 
@@ -630,10 +662,11 @@
                         console.log(camera.rotation);
                         break;
                         case 77:
+                            prevMode = modeRef;
                             modeRef++;
                             modeRef %= 4;
                             velocityUniforms[ 'mode' ].value = modeRef;
-                            console.log(modeRef);
+                            console.log(modeRef + ' ' + prevMode);
                         break;
                         case 78:
                         console.log('n');
@@ -661,7 +694,12 @@
                     velocityUniforms[ 'cohesionDistance' ].value = effectController.cohesion;
                     velocityUniforms[ 'freedomFactor' ].value = effectController.freedom;
                     velocityUniforms[ 'mode' ].value = effectController.mode;
-                    modeRef = effectController.mode;
+                    
+                    if(effectController.mode != modeRef){
+                        prevMode = modeRef;
+                        modeRef = effectController.mode;
+                        console.log(modeRef + ' ' + prevMode);
+                    }
 
                 };
 
@@ -693,10 +731,9 @@
                 fillPositionTexture( dtPosition );
                 fillVelocityTexture( dtVelocity );
 
-                //const dtFigura1 = new THREE.TextureLoader().load('images/tri.tiff');
-
                 velocityVariable = gpuCompute.addVariable( 'textureVelocity', document.getElementById( 'fragmentShaderVelocity' ).textContent, dtVelocity );
                 positionVariable = gpuCompute.addVariable( 'texturePosition', document.getElementById( 'fragmentShaderPosition' ).textContent, dtPosition );
+
 
                 gpuCompute.setVariableDependencies( velocityVariable, [ positionVariable, velocityVariable ] );
                 gpuCompute.setVariableDependencies( positionVariable, [ positionVariable, velocityVariable ] );
@@ -747,9 +784,13 @@
                     'color': { value: new THREE.Color( 0xff2200 ) },
                     'texturePosition': { value: null },
                     'textureVelocity': { value: null },
+                    'statColor01': { value: new THREE.TextureLoader().load('../images/triColor.png') },
+                    'statColor02': { value: new THREE.TextureLoader().load('../images/oColor.png') },
+                    'statColor03': { value: new THREE.TextureLoader().load('../images/emeColor.png') },
                     'time': { value: 1.0 },
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
+                    'prevMode': { value: 0.0 },
                     'delta': { value: 0.0 }
                 };
 
@@ -853,17 +894,16 @@
                  fade += delta*1.0;
                 }
 
-                if(prevMode != modeRef){
+                if(modeDelayed != modeRef){
                     fade = 0.0;
-                    console.log('holi');
+                    console.log('cambio');
                 }
 
-                console.log(fade);
-                //console.log(camera.position);
-                //console.log(camera.rotation);
 
-                prevMode = modeRef;
+                modeDelayed = modeRef;
 
+
+                //console.log(modeRef + ' ' + prevMode);
                 
                 if ( delta > 1 ) delta = 1; // safety cap on large deltas
                 last = now;
@@ -876,6 +916,7 @@
                 birdUniforms[ 'time' ].value = now;
                 birdUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'mode' ].value = modeRef;
+                birdUniforms[ 'prevMode' ].value = prevMode;
                 birdUniforms[ 'delta' ].value = delta;
 
                 velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
