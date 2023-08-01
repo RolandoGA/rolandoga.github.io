@@ -101,14 +101,14 @@
 
                 switch(int(mode)){
                     case 0:
-                        sepDist = 90.; //
-                        aliDist = 0.5; //
+                        sepDist = 0.; //
+                        aliDist = 0.; //
                         cohDist = 0.; //
                         factor = 0.;
                         break;
                     case 1:
-                        sepDist = 50.; //
-                        aliDist = 10.; //
+                        sepDist = 40.; //
+                        aliDist = 0.; //
                         cohDist = 0.; //
                         factor = 0.;
                         break;
@@ -185,8 +185,8 @@
                 // Attract flocks to the center
                 vec3 central = vec3( 0., 0., 0. );
 
-                float fade2 = clamp(fade*2.0, 0.0, 1.0);
-                float fadeSq = clamp(fade2 * fade2, 0.0, 1.0);
+
+                float fadeSq = clamp(fade * fade, 0.0, 1.0);
 
 
                 //separationDistance
@@ -194,7 +194,7 @@
                 //cohesionDistance
 
                 if(mode == 0.0){
-                    //central = vec3( 0., 900., 0. );
+                    central = vec3( 0., 900., 0. );
                     centerForce = 5.;
                      
                 } else if(mode == 1.0){
@@ -234,7 +234,7 @@
                 dir = selfPosition - central;
                 dist = length( dir );
 
-                dir.y *= 2.;
+                dir.y *= 2.5;
                 velFlock -= normalize( dir ) * delta * centerForce;
 
                 for ( float y = 0.0; y < height; y++ ) {
@@ -329,7 +329,6 @@
             uniform sampler2D statColor02;
             uniform sampler2D statColor03;
             uniform sampler2D statColor04;
-            uniform sampler2D statColorBase;
 
             varying vec4 vColor;
             varying float y;
@@ -352,7 +351,7 @@
 
                 if ( birdVertex == 4.0 || birdVertex == 5.0  || birdVertex == 7.0  || birdVertex == 8.0 ) {
                     // flap wings
-                    //newPosition.y = sin( tmpPos.w ) * 5.;
+                    newPosition.y = sin( tmpPos.w ) * 5.;
                 }
 
                 newPosition = mat3( modelMatrix ) * newPosition;
@@ -398,10 +397,10 @@
 
                 switch(int(mode)){
                     case 0:
-                        color1 = texture2D( statColorBase, reference ).xyz;
+                        color1 = birdColor;
                         break;
                     case 1:
-                        color1 = texture2D( statColorBase, reference ).xyz;
+                        color1 = birdColor;
                         break;
                     case 2:
                         color1 = texture2D( statColor01, reference ).xyz;
@@ -419,10 +418,10 @@
 
                 switch(int(prevMode)){
                     case 0:
-                        color2 = texture2D( statColorBase, reference ).xyz;
+                        color2 = birdColor;
                         break;
                     case 1:
-                        color2 = texture2D( statColorBase, reference ).xyz;
+                        color2 = birdColor;
                         break;
                     case 2:
                         color2 = texture2D( statColor01, reference ).xyz;
@@ -440,7 +439,7 @@
 
                 vec3 mixColor = mix(color2, color1, fade);
 
-                vColor = vec4( mixColor * birdColor, 1.0 );
+                vColor = vec4( mixColor, 1.0 );
                 gl_Position = projectionMatrix *  viewMatrix  * vec4( newPosition, 1.0 );
             }
 
@@ -458,9 +457,9 @@
             void main() {
 
                 vec3 z2 =
-                ( 1300. - z ) / 1300.
-                * vColor.xyz;
-                //+ ( y + 100.  ) / 1000.;
+                ( 800. - z ) / 800.
+                * vColor.xyz
+                + ( y + 100.  ) / 1000.;
                 gl_FragColor = vec4( z2, 1. );
 
             }
@@ -484,6 +483,7 @@
 
             import Stats from 'three/addons/libs/stats.module.js';
             import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
             import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
@@ -498,7 +498,7 @@
 
                     super();
 
-                    const trianglesPerBird = 4;
+                    const trianglesPerBird = 3;
                     const triangles = BIRDS * trianglesPerBird;
                     const points = triangles * 3;
 
@@ -525,34 +525,28 @@
 
                     }
 
-                    const wingsSpan = 20;
+                    const wingsSpan = 30;
 
                     for ( let f = 0; f < BIRDS; f ++ ) {
 
                         // Body
                         verts_push(
-                            -5, 0, -20,
-                            0, -6, -20,
-                            0, 0, 15
-                        );
-
-                        verts_push(
-                            5, 0, -20,
-                            0, -6, -20,
+                            0, - 0, - 20,
+                            0, 4, 0,
                             0, 0, 15
                         );
 
                         // Wings
                         verts_push(
-                            -5, 0, -20,
-                            - wingsSpan, 0, -20,
-                            0, 0, 15
+                            0, 0, 0,
+                            - wingsSpan, 0, 10,
+                            - wingsSpan * 0.3, 0, -20
                         );
 
                         verts_push(
-                            5, 0, -20,
-                            wingsSpan, 0, -20,
-                            0, 0, 15
+                            0, 0, 0,
+                            wingsSpan * 0.3, 0, -20,
+                            wingsSpan, 0, 10
                         );
 
                     }
@@ -571,82 +565,51 @@
                         references.array[ v * 2 ] = x;
                         references.array[ v * 2 + 1 ] = y;
 
-                        birdVertex.array[ v ] = v % 12;
+                        birdVertex.array[ v ] = v % 9;
 
-                        let r = Math.random()*.8 + 0.2;
-                        let g = Math.random()*.6 + 0.2;
-                        let b = Math.random()*.6 + 0.2; 
+                        let r = Math.random()*.9 + 0.1;
+                        let g = Math.random()*.6 + 0.1;
+                        let b = Math.random()*.6 + 0.1; 
 
-
-                        //     Random color                        
-                        birdColors.array[ v * 3 + 0 ] = r;
-                        birdColors.array[ v * 3 + 1 ] = g;
-                        birdColors.array[ v * 3 + 2 ] = b;
-
-                        if(pointIndex == 0 || pointIndex == 3 ){
-                            birdColors.array[ v * 3 + 0 ] = 0.75;
-                            birdColors.array[ v * 3 + 1 ] = 0.75;
-                            birdColors.array[ v * 3 + 2 ] = 0.75;
-                        }
-
-                        if(pointIndex == 1 || pointIndex == 2 || pointIndex == 4 || pointIndex == 5 ){
-                            birdColors.array[ v * 3 + 0 ] = 0.8;
-                            birdColors.array[ v * 3 + 1 ] = 0.8;
-                            birdColors.array[ v * 3 + 2 ] = 0.8;
-                        }
                         
-                        if(pointIndex == 6 || pointIndex == 9 ){
-                            birdColors.array[ v * 3 + 0 ] = 0.9;
-                            birdColors.array[ v * 3 + 1 ] = 0.9;
-                            birdColors.array[ v * 3 + 2 ] = 0.9;
-                        }
+                        if(pointIndex < 3.0){
 
-                        if(pointIndex == 7 || pointIndex == 8 || pointIndex == 10 || pointIndex == 11 ){
-                            birdColors.array[ v * 3 + 0 ] = 1.;
-                            birdColors.array[ v * 3 + 1 ] = 1.;
-                            birdColors.array[ v * 3 + 2 ] = 1.;
-                        }
+                            birdColors.array[ v * 3 + 0 ] = r;
+                            birdColors.array[ v * 3 + 1 ] = g;
+                            birdColors.array[ v * 3 + 2 ] = b;
 
+                        } else if(pointIndex < 6.0){
 
+                            let offset = 0.0;
 
-                        // if(pointIndex < 3.0){
+                            if( pointIndex == 3.0){
+                                offset = 3.0;
 
-                        //     birdColors.array[ v * 3 + 0 ] = r;
-                        //     birdColors.array[ v * 3 + 1 ] = g;
-                        //     birdColors.array[ v * 3 + 2 ] = b;
-
-                        // } else if(pointIndex < 6.0){
-
-                        //     let offset = 0.0;
-
-                        //     if( pointIndex == 3.0){
-                        //         offset = 3.0;
-
-                        //     } else if( pointIndex == 4.0){
-                        //         offset = 4.0;
+                            } else if( pointIndex == 4.0){
+                                offset = 4.0;
                                 
-                        //     } else if( pointIndex == 5.0){
-                        //         offset = 2.0;
+                            } else if( pointIndex == 5.0){
+                                offset = 2.0;
                                 
-                        //     }
+                            }
 
-                        //     birdColors.array[ v * 3 + 0 ] = r;
-                        //     birdColors.array[ v * 3 + 1 ] = g;
-                        //     birdColors.array[ v * 3 + 2 ] = b;
+                            birdColors.array[ v * 3 + 0 ] = r;
+                            birdColors.array[ v * 3 + 1 ] = g;
+                            birdColors.array[ v * 3 + 2 ] = b;
 
-                        //     birdColors.array[ (v + offset) * 3 + 0] = r;
-                        //     birdColors.array[ (v + offset) * 3 + 1] = g;
-                        //     birdColors.array[ (v + offset) * 3 + 2] = b;
+                            birdColors.array[ (v + offset) * 3 + 0] = r;
+                            birdColors.array[ (v + offset) * 3 + 1] = g;
+                            birdColors.array[ (v + offset) * 3 + 2] = b;
 
-                        // } else {
+                        } else {
 
-                        //     continue;
+                            continue;
 
-                        // }
+                        }
 
                     }
 
-                    this.scale( 0.8, 0.8, 0.8 );
+                    this.scale( 0.6, 0.6, 0.6 );
 
                 }
 
@@ -657,6 +620,8 @@
             let container, stats;
             let camera, scene, renderer;
             let mouseX = 0, mouseY = 0;
+
+            const loader = new GLTFLoader();
 
             let fade = 0.0;
 
@@ -670,7 +635,7 @@
             let windowHalfX = window.innerWidth / 2;
             let windowHalfY = window.innerHeight / 2;
 
-            const BOUNDS = 200, BOUNDS_HALF = BOUNDS / 2;
+            const BOUNDS = 10, BOUNDS_HALF = BOUNDS / 2;
 
             let last = performance.now();
 
@@ -692,16 +657,16 @@
                 container = document.createElement( 'div' );
                 document.body.appendChild( container );
 
-                camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 5000 );
+                camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 5000 );
                 camera.position.x = 0;
                 camera.position.y = -150;
-                camera.position.z = 700;
+                camera.position.z = 900;
 
                 camera.rotation.x = .3;
                 camera.rotation.y = .0;
 
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color( 0x222222);
+                scene.background = new THREE.Color( 0x444444 );
                 scene.fog = new THREE.Fog( 0x000C05, -800, 3500 );
 
 
@@ -732,6 +697,34 @@
                 container.addEventListener( 'pointermove', onPointerMove );
 
                 //
+
+                loader.load(
+                    '../models/escenario7.glb',
+                    function ( gltf ) {
+
+                        gltf.scene.scale.set(90.0, 90.0, 90.0);
+                        gltf.scene.position.set(0.0, -300.0, -0.0);
+
+                        //scene.add( gltf.scene );
+
+                        gltf.scene; // THREE.Group
+                        gltf.scenes; // Array<THREE.Group>
+                        gltf.asset; // Object
+
+                    },
+                    // called while loading is progressing
+                    function ( xhr ) {
+
+                        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+                    },
+                    // called when loading has errors
+                    function ( error ) {
+
+                        console.log( 'An error happened' );
+
+                    }
+                );
 
                 window.addEventListener( 'resize', onWindowResize );
 
@@ -867,10 +860,10 @@
                 velocityUniforms[ 'fade' ] = { value: 0.0 };
                 velocityUniforms[ 'predator' ] = { value: new THREE.Vector3() };
 
-                velocityUniforms[ 'fig1' ] = { value: new THREE.TextureLoader().load('../images/v1.png') };
-                velocityUniforms[ 'fig2' ] = { value: new THREE.TextureLoader().load('../images/v2.png') };
-                velocityUniforms[ 'fig3' ] = { value: new THREE.TextureLoader().load('../images/v3.png') };
-                velocityUniforms[ 'fig4' ] = { value: new THREE.TextureLoader().load('../images/v4.png') };
+                velocityUniforms[ 'fig1' ] = { value: new THREE.TextureLoader().load('../images/tri.png') };
+                velocityUniforms[ 'fig2' ] = { value: new THREE.TextureLoader().load('../images/o.png') };
+                velocityUniforms[ 'fig3' ] = { value: new THREE.TextureLoader().load('../images/eme.png') };
+                velocityUniforms[ 'fig4' ] = { value: new THREE.TextureLoader().load('../images/viz4.png') };
 
                 velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed( 2 );
 
@@ -893,36 +886,15 @@
 
                 const geometry = new BirdGeometry();
 
-                const vizColor01 = new THREE.TextureLoader().load('../images/v1Color.png') ;
-                const vizColor02 = new THREE.TextureLoader().load('../images/v2Color.png') ;
-                const vizColor03 = new THREE.TextureLoader().load('../images/v3Color.png') ;
-                const vizColor04 = new THREE.TextureLoader().load('../images/v4Color.png') ;
-
-                vizColor01.colorSpace =
-                vizColor02.colorSpace =
-                vizColor03.colorSpace = 
-                vizColor04.colorSpace = THREE.SRGBColorSpace;
-                
-                vizColor01.minFilter = 
-                vizColor02.minFilter = 
-                vizColor03.minFilter = 
-                vizColor04.minFilter = THREE.NearestFilter;
-
-                vizColor01.magFilter = 
-                vizColor02.magFilter = 
-                vizColor03.magFilter = 
-                vizColor04.magFilter = THREE.NearestFilter;
-
                 // For Vertex and Fragment
                 birdUniforms = {
                     'color': { value: new THREE.Color( 0xff2200 ) },
                     'texturePosition': { value: null },
                     'textureVelocity': { value: null },
-                    'statColor01': { value: vizColor01},
-                    'statColor02': { value: vizColor02 },
-                    'statColor03': { value: vizColor03 },
-                    'statColor04': { value: vizColor04 },
-                    'statColorBase': { value: new THREE.TextureLoader().load('../images/vBaseColor.png') },
+                    'statColor01': { value: new THREE.TextureLoader().load('../images/triColor.png') },
+                    'statColor02': { value: new THREE.TextureLoader().load('../images/oColor.png') },
+                    'statColor03': { value: new THREE.TextureLoader().load('../images/emeColor.png') },
+                    'statColor04': { value: new THREE.TextureLoader().load('../images/viz4Color.png') },
                     'time': { value: 1.0 },
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
@@ -955,7 +927,7 @@
                 for ( let k = 0, kl = theArray.length; k < kl; k += 4 ) {
 
                     const x = Math.random() * BOUNDS - BOUNDS_HALF;
-                    const y = Math.random() * BOUNDS - BOUNDS_HALF;
+                    const y = Math.random() * BOUNDS - BOUNDS_HALF + 900.;
                     const z = Math.random() * BOUNDS - BOUNDS_HALF;
 
                     theArray[ k + 0 ] = x;
@@ -1026,7 +998,7 @@
                     fade = 1.0;
                     
                 } else{
-                 fade += delta*0.3;
+                 fade += delta*1.0;
                 }
 
                 if(modeDelayed != modeRef){
@@ -1037,10 +1009,10 @@
 
                 switch( ~ ~ modeRef){
                     case 0:
-                        speedTarget = 12.0;
+                        speedTarget = 2.0;
                         break;
                     case 1:
-                        speedTarget = 9.0;
+                        speedTarget = 10.0;
                         break;
                     case 2:
                         speedTarget = 7.0;
