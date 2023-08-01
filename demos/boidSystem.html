@@ -394,14 +394,14 @@
                 vec3 color1;
                 vec3 color2;
 
-                vec3 fadeColor = vec3(0.31, 0.31, 0.31);
+                vec3 fadeColor = vec3(0.25, 0.25, 0.25);
 
                 switch(int(mode)){
                     case 0:
                         color1 = texture2D( statColorBase, reference ).xyz;
                         break;
                     case 1:
-                        color1 = texture2D( statColorBase, reference ).xyz;
+                        color1 = mix(texture2D( statColorBase, reference ).xyz, fadeColor, 0.8);
                         break;
                     case 2:
                         color1 = texture2D( statColor01, reference ).xyz;
@@ -422,7 +422,7 @@
                         color2 = texture2D( statColorBase, reference ).xyz;
                         break;
                     case 1:
-                        color2 = texture2D( statColorBase, reference ).xyz;
+                        color2 = mix( texture2D( statColorBase, reference ).xyz, fadeColor, 0.80);
                         break;
                     case 2:
                         color2 = texture2D( statColor01, reference ).xyz;
@@ -487,6 +487,7 @@
             import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
             import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
             const WIDTH = 16;
 
@@ -656,12 +657,17 @@
 
             let container, stats;
             let camera, scene, renderer;
+            let avion;
             let mouseX = 0, mouseY = 0;
 
             let fade = 0.0;
 
             let speed = 20.0;
             let speedTarget = 0.0;
+
+            let colorAvion = new THREE.Color(0,0,0);
+            let colorTarget = new THREE.Color(0,0,0);
+            let colors = [ "e02d19","f99648","fef0c7","64d386","2ba288","40c5ab","38bdbb","f7bbb","2a2364","601c57","cb2971","d03477" ];
 
             let modeDelayed = 0.0;
             let prevMode = 0.0;
@@ -705,6 +711,20 @@
                 scene.fog = new THREE.Fog( 0x000C05, -800, 3500 );
 
 
+                const loader = new GLTFLoader().load( '/models/avion.glb', function ( gltf ) {
+                    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                    material.vertexColors = true;
+                    gltf.scene.traverse(function(m) {
+                        m.material = material;
+                    });
+
+                    gltf.scene.scale.set(100, 100, 100);
+                    gltf.scene.rotation.set(0.6, -0.5, -0.1);
+                    gltf.scene.position.set(0.0, -130.0, 600.0);
+                    gltf.scene.name = 'avion';
+                    scene.add( gltf.scene );
+
+                } );
 
                 //////Control
 
@@ -1059,13 +1079,22 @@
                 speed += ( speedTarget - speed ) * delta * 1.0;
                 console.log(speed);
 
-
                 modeDelayed = modeRef;
 
-                //console.log(modeRef + ' ' + prevMode);
                 
                 if ( delta > 1 ) delta = 1; // safety cap on large deltas
                 last = now;
+
+                colorTarget.setHex(`0x${colors[modeRef]}`);
+
+                colorAvion.lerpColors ( colorAvion, colorTarget, 0.07 ); 
+                avion = scene.getObjectByName('avion');
+                avion.material.color.set(colorAvion);
+
+                //(0.6, -0.5, -0.1);
+                avion.rotation.x = Math.sin(now / 1000) * .1 + .6;
+                avion.rotation.y = Math.sin(now / 1000 + 5) * .2 - .5;
+
 
                 positionUniforms[ 'time' ].value = now;
                 positionUniforms[ 'delta' ].value = delta;
