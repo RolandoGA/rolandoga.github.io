@@ -661,7 +661,9 @@
             let avion;
             let colorAvionIndex = 0.;
             let avionScale = 0.;
-            let avionMov = new THREE.Vector3( 0.0, -130.0, 600.0 );
+            let avionStart = new THREE.Vector3( -50.0, -130.0, 900.0 );
+            let avionPos = new THREE.Vector3( 0.0, -130.0, 600.0 );
+            let avionEnd = new THREE.Vector3( 0.0, 0.0, 0.0 );
             
             let mouseX = 0, mouseY = 0;
 
@@ -726,7 +728,7 @@
 
                     gltf.scene.scale.set(100, 100, 100);
                     gltf.scene.rotation.set(0.6, -0.5, -0.1);
-                    gltf.scene.position.set(0.0, -130.0, 600.0);
+                    gltf.scene.position.set(0.0, -130.0, 800.0);
                     gltf.scene.name = 'avion';
                     scene.add( gltf.scene );
 
@@ -1113,13 +1115,25 @@
                 avion.material.color.set(colorAvion);
 
                 if(modeRef == 1){
-                    if(avionScale < 100)
+                    if(avionScale < 100){
                         avionScale+=1;
-                    avion.position.set(0.0, -130.0, 600.0);
+                        avion.position.copy(avionStart).lerp(avionPos, Math.sin(avionScale*.9/(57.2958)));
+                    }
+                    else{
+                        avionScale = 100;
+                        avion.position.copy(avionPos);
+                    }
                 }
-                if(prevMode == 1){
-                    avionScale*= 0.97;
-                    avion.translateZ(-1);
+                if(modeRef != 1){
+                    //Finished Animation
+                    if(avionScale <= 0.0){
+                        avion.position.copy(avionStart);
+                        avionScale = 0;
+                    }else{
+                        //Animation
+                        avion.position.copy(avionPos).lerp(avionEnd, 1 - Math.sin(avionScale*.9/(57.2958)));
+                        avionScale*= 0.98;
+                    }
 
                 }
 
