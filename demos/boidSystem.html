@@ -585,21 +585,21 @@
                         birdColors.array[ v * 3 + 2 ] = b;
 
                         if(pointIndex == 0 || pointIndex == 3 ){
-                            birdColors.array[ v * 3 + 0 ] = 0.75;
-                            birdColors.array[ v * 3 + 1 ] = 0.75;
-                            birdColors.array[ v * 3 + 2 ] = 0.75;
-                        }
-
-                        if(pointIndex == 1 || pointIndex == 2 || pointIndex == 4 || pointIndex == 5 ){
                             birdColors.array[ v * 3 + 0 ] = 0.8;
                             birdColors.array[ v * 3 + 1 ] = 0.8;
                             birdColors.array[ v * 3 + 2 ] = 0.8;
                         }
-                        
-                        if(pointIndex == 6 || pointIndex == 9 ){
+
+                        if(pointIndex == 1 || pointIndex == 2 || pointIndex == 4 || pointIndex == 5 ){
                             birdColors.array[ v * 3 + 0 ] = 0.9;
                             birdColors.array[ v * 3 + 1 ] = 0.9;
                             birdColors.array[ v * 3 + 2 ] = 0.9;
+                        }
+                        
+                        if(pointIndex == 6 || pointIndex == 9 ){
+                            birdColors.array[ v * 3 + 0 ] = 1;
+                            birdColors.array[ v * 3 + 1 ] = 1;
+                            birdColors.array[ v * 3 + 2 ] = 1;
                         }
 
                         if(pointIndex == 7 || pointIndex == 8 || pointIndex == 10 || pointIndex == 11 ){
@@ -657,7 +657,12 @@
 
             let container, stats;
             let camera, scene, renderer;
+
             let avion;
+            let colorAvionIndex = 0.;
+            let avionScale = 0.;
+            let avionMov = new THREE.Vector3( 0.0, -130.0, 600.0 );
+            
             let mouseX = 0, mouseY = 0;
 
             let fade = 0.0;
@@ -667,7 +672,7 @@
 
             let colorAvion = new THREE.Color(0,0,0);
             let colorTarget = new THREE.Color(0,0,0);
-            let colors = [ "e02d19","f99648","fef0c7","64d386","2ba288","40c5ab","38bdbb","f7bbb","2a2364","601c57","cb2971","d03477" ];
+            let colors = [ "e02d19","f99648","fef0c7","64d386","2ba288","40c5ab","38bdbb","f7bbb","2a2364","601c57","cb2971","e27daf","f7e181" ];
 
             let modeDelayed = 0.0;
             let prevMode = 0.0;
@@ -834,6 +839,11 @@
                             modeRef = 5.;
                             velocityUniforms[ 'mode' ].value = modeRef;
                             console.log('Mode viz4');
+                            break;
+                        case 54:
+                            console.log('Cambio color');
+                            colorAvionIndex ++;
+                            colorAvionIndex %= colors.length;
                             break;
                         case 67:
                             console.log(camera.position);
@@ -1096,15 +1106,28 @@
                 if ( delta > 1 ) delta = 1; // safety cap on large deltas
                 last = now;
 
-                colorTarget.setHex(`0x${colors[modeRef]}`);
+                colorTarget.setHex(`0x${colors[colorAvionIndex]}`);
 
                 colorAvion.lerpColors ( colorAvion, colorTarget, 0.07 ); 
                 avion = scene.getObjectByName('avion');
                 avion.material.color.set(colorAvion);
 
+                if(modeRef == 1){
+                    if(avionScale < 100)
+                        avionScale+=1;
+                    avion.position.set(0.0, -130.0, 600.0);
+                }
+                if(prevMode == 1){
+                    avionScale*= 0.97;
+                    avion.translateZ(-1);
+
+                }
+
+
                 //(0.6, -0.5, -0.1);
                 avion.rotation.x = Math.sin(now / 1000) * .1 + .6;
                 avion.rotation.y = Math.sin(now / 1000 + 5) * .2 - .5;
+                avion.scale.set(avionScale, avionScale, avionScale);
 
 
                 positionUniforms[ 'time' ].value = now;
