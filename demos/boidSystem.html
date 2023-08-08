@@ -344,9 +344,24 @@
 
                 vec4 tmpPos = texture2D( texturePosition, reference );
                 vec3 pos = tmpPos.xyz;
+                vec3 blink = vec3( 0.0 );
+
+                vec3 colors[13] = vec3[](vec3(0.8784314,0.1764706,0.09803922),
+                                vec3(0.39215687,0.827451,0.5254902),
+                                vec3(0.2509804,0.77254903,0.67058825),
+                                vec3(0.05882353,0.48235294,0.73333335),
+                                vec3(0.48235294,0.49411765,0.5019608),
+                                vec3(0.8862745,0.49019608,0.6862745),
+                                vec3(0.9764706,0.5882353,0.28235295),
+                                vec3(0.99607843,0.9411765,0.78039217),
+                                vec3(0.9764706,0.95686275,0.9647059),
+                                vec3(0.21960784,0.7411765,0.73333335),
+                                vec3(0.5686275,0.1764706,0.39607844),
+                                vec3(0.79607844,0.16078432,0.44313726),
+                                vec3(0.96862745,0.88235295,0.5058824)
+                              );
 
                 vec3 velocity = normalize(texture2D( textureVelocity, reference ).xyz);
-
 
                 vec3 newPosition = position;
 
@@ -436,9 +451,13 @@
                     case 5:
                         color2 = texture2D( statColor04, reference ).xyz;
                         break;
+                }
+
+                if(int(mode) > 1){
+                    blink = vec3(0.3 + sin(time/200.)* 0.3);
                 }    
 
-                vec3 mixColor = mix(color2, color1, fade);
+                vec3 mixColor = mix(color2, color1, fade) + blink;
 
                 vColor = vec4( mixColor * birdColor, 1.0 );
                 gl_Position = projectionMatrix *  viewMatrix  * vec4( newPosition, 1.0 );
@@ -660,10 +679,11 @@
 
             let avion;
             let colorAvionIndex = 0.;
-            let avionScale = 0.;
-            let avionStart = new THREE.Vector3( -50.0, -130.0, 900.0 );
+            let avionStart = new THREE.Vector3( -50.0, -190.0, 750.0 );
             let avionPos = new THREE.Vector3( 0.0, -130.0, 600.0 );
             let avionEnd = new THREE.Vector3( 0.0, 0.0, 0.0 );
+            let avionTransition = 0.;
+            let avionScale = 0.;
             
             let mouseX = 0, mouseY = 0;
 
@@ -674,7 +694,7 @@
 
             let colorAvion = new THREE.Color(0,0,0);
             let colorTarget = new THREE.Color(0,0,0);
-            let colors = [ "e02d19","f99648","fef0c7","64d386","2ba288","40c5ab","38bdbb","f7bbb","2a2364","601c57","cb2971","e27daf","f7e181" ];
+            let colors = [ "e02d19","64d386","40c5ab","f7bbb","7b7e80","e27daf","f99648","fef0c7","f9f4f6","38bdbb","912d65","cb2971","f7e181" ];
 
             let modeDelayed = 0.0;
             let prevMode = 0.0;
@@ -1115,33 +1135,40 @@
                 avion.material.color.set(colorAvion);
 
                 if(modeRef == 1){
-                    if(avionScale < 100){
-                        avionScale+=1;
-                        avion.position.copy(avionStart).lerp(avionPos, Math.sin(avionScale*.9/(57.2958)));
+                    if(avionTransition < 100){
+                        avionTransition+=0.7;
+                        avionScale = 0.5 + Math.sin((avionTransition * 1.8 -90) * 0.0174533)/2;
+                        avion.position.copy(avionStart).lerp(avionPos, avionScale);
                     }
                     else{
-                        avionScale = 100;
+                        avionTransition = 100;
                         avion.position.copy(avionPos);
                     }
+
+                avion.scale.set( avionScale * 100, avionScale * 100, avionScale * 100);
                 }
                 if(modeRef != 1){
                     //Finished Animation
-                    if(avionScale <= 0.0){
+                    if(avionTransition <= 0.0){
                         avion.position.copy(avionStart);
+                        avionTransition = 0;
                         avionScale = 0;
                     }else{
                         //Animation
-                        avion.position.copy(avionPos).lerp(avionEnd, 1 - Math.sin(avionScale*.9/(57.2958)));
-                        avionScale*= 0.98;
+                        avionTransition*= 0.98;
+                        avionScale = 0.5 - Math.sin((avionTransition * 1.8 - 90) * 0.0174533) / 2;
+                        avion.position.copy(avionPos).lerp(avionEnd, avionScale);
                     }
+
+                    avion.scale.set((1- avionScale) * 100, (1- avionScale) * 100, (1- avionScale) * 100);
 
                 }
 
 
                 //(0.6, -0.5, -0.1);
-                avion.rotation.x = Math.sin(now / 1000) * .1 + .6;
-                avion.rotation.y = Math.sin(now / 1000 + 5) * .2 - .5;
-                avion.scale.set(avionScale, avionScale, avionScale);
+                avion.rotation.x = Math.sin(now / 1000) * .1 + (0.6 * avionTransition / 100);
+                avion.rotation.y = Math.sin(now / 1000 + 5) * .2 - (0.5 * avionTransition / 100);
+                //avion.scale.set(100, 100, 100);
 
 
                 positionUniforms[ 'time' ].value = now;
