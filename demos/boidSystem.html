@@ -460,9 +460,11 @@
                 switch(int(mode)){
                     case 0:
                         color1 = texture2D( statColorBase, reference ).xyz;
+                        color1 = rgb2hsl(color1);
                         break;
                     case 1:
                         color1 = mix(texture2D( statColorBase, reference ).xyz, fadeColor, 0.8);
+                        color1 = rgb2hsl(color1);
                         break;
                     case 2:
                         dist = ceil(texture2D( statColor01, reference ).x * 12.);
@@ -1019,10 +1021,15 @@
                 const vizColor03 = new THREE.TextureLoader().load('../images/v3Color.png') ;
                 const vizColor04 = new THREE.TextureLoader().load('../images/v4Color.png') ;
 
+                const vizColorBase = new THREE.TextureLoader().load('../images/vBaseColor.png') ;
+
                 // vizColor01.colorSpace =
                 // vizColor02.colorSpace =
                 // vizColor03.colorSpace = 
                 // vizColor04.colorSpace = THREE.SRGBColorSpace;
+                
+                
+                vizColorBase.colorSpace = THREE.SRGBColorSpace;
                 
                 vizColor01.minFilter = 
                 vizColor02.minFilter = 
@@ -1043,7 +1050,7 @@
                     'statColor02': { value: vizColor02 },
                     'statColor03': { value: vizColor03 },
                     'statColor04': { value: vizColor04 },
-                    'statColorBase': { value: new THREE.TextureLoader().load('../images/vBaseColor.png') },
+                    'statColorBase': { value: vizColorBase },
                     'time': { value: 1.0 },
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
