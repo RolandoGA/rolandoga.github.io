@@ -339,14 +339,58 @@
             uniform float fade;
             uniform float mode;
             uniform float prevMode;
+            uniform float planeIndex;
+
+            vec3 hsl2rgb( in vec3 c )
+            {
+                vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
+
+                return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
+            }
+
+            vec3 rgb2hsl( in vec3 c ){
+              float h = 0.0;
+                float s = 0.0;
+                float l = 0.0;
+                float r = c.r;
+                float g = c.g;
+                float b = c.b;
+                float cMin = min( r, min( g, b ) );
+                float cMax = max( r, max( g, b ) );
+
+                l = ( cMax + cMin ) / 2.0;
+                if ( cMax > cMin ) {
+                    float cDelta = cMax - cMin;
+                    
+                    //s = l < .05 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) ); Original
+                    s = l < .0 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) );
+                    
+                    if ( r == cMax ) {
+                        h = ( g - b ) / cDelta;
+                    } else if ( g == cMax ) {
+                        h = 2.0 + ( b - r ) / cDelta;
+                    } else {
+                        h = 4.0 + ( r - g ) / cDelta;
+                    }
+
+                    if ( h < 0.0) {
+                        h += 6.0;
+                    }
+                    h = h / 6.0;
+                }
+                return vec3( h, s, l );
+            }
 
             void main() {
 
                 vec4 tmpPos = texture2D( texturePosition, reference );
                 vec3 pos = tmpPos.xyz;
-                vec3 blink = vec3( 0.0 );
+                float blink = ( 0.0 );
+                float blink1 = ( 0.0 );
+                float blink2 = ( 0.0 );
 
-                vec3 colors[13] = vec3[](vec3(0.8784314,0.1764706,0.09803922),
+                vec3 colors[13] = vec3[](
+                                vec3(0.8784314,0.1764706,0.09803922),
                                 vec3(0.39215687,0.827451,0.5254902),
                                 vec3(0.2509804,0.77254903,0.67058825),
                                 vec3(0.05882353,0.48235294,0.73333335),
@@ -409,7 +453,9 @@
                 vec3 color1;
                 vec3 color2;
 
-                vec3 fadeColor = vec3(0.25, 0.25, 0.25);
+                vec3 fadeColor = vec3(0.05, 0.125, 0.11);
+
+                float dist = 0.0;
 
                 switch(int(mode)){
                     case 0:
@@ -419,16 +465,20 @@
                         color1 = mix(texture2D( statColorBase, reference ).xyz, fadeColor, 0.8);
                         break;
                     case 2:
-                        color1 = texture2D( statColor01, reference ).xyz;
+                        dist = ceil(texture2D( statColor01, reference ).x * 12.);
+                        color1 = rgb2hsl(colors[int(dist)]);
                         break;
                     case 3:
-                        color1 = texture2D( statColor02, reference ).xyz;
+                        dist = ceil(texture2D( statColor02, reference ).x * 12.);
+                        color1 = rgb2hsl(colors[int(dist)]);
                         break;
                     case 4:
-                        color1 = texture2D( statColor03, reference ).xyz;
+                        dist = ceil(texture2D( statColor03, reference ).x * 12.);
+                        color1 = rgb2hsl(colors[int(dist)]);
                         break;
                     case 5:
-                        color1 = texture2D( statColor04, reference ).xyz;
+                        dist = ceil(texture2D( statColor04, reference ).x * 12.);
+                        color1 = rgb2hsl(colors[int(dist)]);
                         break;
                 }
 
@@ -440,24 +490,32 @@
                         color2 = mix( texture2D( statColorBase, reference ).xyz, fadeColor, 0.80);
                         break;
                     case 2:
-                        color2 = texture2D( statColor01, reference ).xyz;
+                        color2 = colors[int(ceil(texture2D( statColor01, reference ).x * 12.))];
                         break;
                     case 3:
-                        color2 = texture2D( statColor02, reference ).xyz;
+                        color2 = colors[int(ceil(texture2D( statColor02, reference ).x * 12.))];
                         break;
                     case 4:
-                        color2 = texture2D( statColor03, reference ).xyz;
+                        color2 = colors[int(ceil(texture2D( statColor03, reference ).x * 12.))];
                         break;
                     case 5:
-                        color2 = texture2D( statColor04, reference ).xyz;
+                        color2 = colors[int(ceil(texture2D( statColor04, reference ).x * 12.))];
                         break;
                 }
 
                 if(int(mode) > 1){
-                    blink = vec3(0.3 + sin(time/200.)* 0.3);
+                    dist = clamp(distance(dist, planeIndex), 0.0, 1.0);
+                    blink = sin(time/700.) ;
+                    blink1 = (0.3 + blink * 0.2 ) * (1.0 - dist);
+                    blink2 = (0.5 + blink* 0.3 ) * dist;
                 }    
 
-                vec3 mixColor = mix(color2, color1, fade) + blink;
+                
+                vec3 mixColor = mix(color2, hsl2rgb(color1), fade) + blink1;
+                mixColor = mix( mixColor, fadeColor, blink2);
+                
+                //vec3 mixColor = mix(color2, hsl2rgb(color1), fade) + blink;
+                //vec3 mixColor = mix(color2, hsl2rgb(color1 + vec3(0., blink.x, blink.x*0.5)), fade);
 
                 vColor = vec4( mixColor * birdColor, 1.0 );
                 gl_Position = projectionMatrix *  viewMatrix  * vec4( newPosition, 1.0 );
@@ -678,7 +736,7 @@
             let camera, scene, renderer;
 
             let avion;
-            let colorAvionIndex = 0.;
+            let planeIndex = 0.;
             let avionStart = new THREE.Vector3( -50.0, -190.0, 750.0 );
             let avionPos = new THREE.Vector3( 0.0, -130.0, 600.0 );
             let avionEnd = new THREE.Vector3( 0.0, 0.0, 0.0 );
@@ -864,8 +922,8 @@
                             break;
                         case 54:
                             console.log('Cambio color');
-                            colorAvionIndex ++;
-                            colorAvionIndex %= colors.length;
+                            planeIndex ++;
+                            planeIndex %= colors.length;
                             break;
                         case 67:
                             console.log(camera.position);
@@ -961,10 +1019,10 @@
                 const vizColor03 = new THREE.TextureLoader().load('../images/v3Color.png') ;
                 const vizColor04 = new THREE.TextureLoader().load('../images/v4Color.png') ;
 
-                vizColor01.colorSpace =
-                vizColor02.colorSpace =
-                vizColor03.colorSpace = 
-                vizColor04.colorSpace = THREE.SRGBColorSpace;
+                // vizColor01.colorSpace =
+                // vizColor02.colorSpace =
+                // vizColor03.colorSpace = 
+                // vizColor04.colorSpace = THREE.SRGBColorSpace;
                 
                 vizColor01.minFilter = 
                 vizColor02.minFilter = 
@@ -990,6 +1048,7 @@
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
                     'prevMode': { value: 0.0 },
+                    'planeIndex': { value: 0.0 },
                     'delta': { value: 0.0 }
                 };
 
@@ -1128,7 +1187,7 @@
                 if ( delta > 1 ) delta = 1; // safety cap on large deltas
                 last = now;
 
-                colorTarget.setHex(`0x${colors[colorAvionIndex]}`);
+                colorTarget.setHex(`0x${colors[planeIndex]}`);
 
                 colorAvion.lerpColors ( colorAvion, colorTarget, 0.07 ); 
                 avion = scene.getObjectByName('avion');
@@ -1181,6 +1240,7 @@
                 birdUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'mode' ].value = modeRef;
                 birdUniforms[ 'prevMode' ].value = prevMode;
+                birdUniforms[ 'planeIndex' ].value = planeIndex;
                 birdUniforms[ 'delta' ].value = delta;
 
                 velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
