@@ -338,6 +338,7 @@
             uniform float time;
             uniform float fade;
             uniform float mode;
+            uniform float glowTransition;
             uniform float prevMode;
             uniform float planeIndex;
 
@@ -505,12 +506,13 @@
                         break;
                 }
 
-                if(int(mode) > 1){
+                ////esto activa y desactiva el blink
+                
                     dist = clamp(distance(dist, planeIndex), 0.0, 1.0);
                     blink = sin(time/700.) ;
-                    blink1 = (0.3 + blink * 0.2 ) * (1.0 - dist);
-                    blink2 = (0.5 + blink* 0.3 ) * dist;
-                }    
+                    blink1 = (0.3 + blink * 0.2 ) * (1.0 - dist) * glowTransition;
+                    blink2 = (0.5 + blink* 0.3 ) * dist * glowTransition;
+                    
 
                 
                 vec3 mixColor = mix(color2, hsl2rgb(color1), fade) + blink1;
@@ -748,6 +750,8 @@
             let mouseX = 0, mouseY = 0;
 
             let fade = 0.0;
+            let glow = 0.0;
+            let glowTransition = 0.0;
 
             let speed = 20.0;
             let speedTarget = 0.0;
@@ -795,7 +799,7 @@
 
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color( 0x222222);
-                scene.fog = new THREE.Fog( 0x000C05, -800, 30500 );
+                //scene.fog = new THREE.Fog( 0x000C05, -800, 30500 );
 
 
                 const loader = new GLTFLoader();
@@ -927,6 +931,10 @@
                             planeIndex ++;
                             planeIndex %= colors.length;
                             break;
+                        case 55:
+                            console.log('Cambio glow');
+                            glow = 1.0 - glow;
+                            break;
                         case 67:
                             console.log(camera.position);
                             console.log(camera.rotation);
@@ -1054,6 +1062,7 @@
                     'time': { value: 1.0 },
                     'fade': { value: 0.0 },
                     'mode': { value: 0.0 },
+                    'glowTransition': { value: 0.0 },
                     'prevMode': { value: 0.0 },
                     'planeIndex': { value: 0.0 },
                     'delta': { value: 0.0 }
@@ -1200,6 +1209,8 @@
                 avion = scene.getObjectByName('avion');
                 avion.material.color.set(colorAvion);
 
+                glowTransition = glowTransition + 0.1 * ( glow - glowTransition );
+
                 if(modeRef == 1){
                     if(avionTransition < 100){
                         avionTransition+=0.7;
@@ -1221,7 +1232,9 @@
                         avionScale = 0;
                     }else{
                         //Animation
-                        avionTransition*= 0.98;
+                        if(fade > 0.3){
+                            avionTransition*= 0.98;
+                        }
                         avionScale = 0.5 - Math.sin((avionTransition * 1.8 - 90) * 0.0174533) / 2;
                         avion.position.copy(avionPos).lerp(avionEnd, avionScale);
                     }
@@ -1246,6 +1259,7 @@
                 birdUniforms[ 'time' ].value = now;
                 birdUniforms[ 'fade' ].value = fade;
                 birdUniforms[ 'mode' ].value = modeRef;
+                birdUniforms[ 'glowTransition' ].value = glowTransition;
                 birdUniforms[ 'prevMode' ].value = prevMode;
                 birdUniforms[ 'planeIndex' ].value = planeIndex;
                 birdUniforms[ 'delta' ].value = delta;
