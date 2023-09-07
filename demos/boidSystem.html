@@ -199,32 +199,32 @@
                      
                 } else if(mode == 1.0){
                     centerForce = 10.;
-                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.01;
+                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 700.0 - 350.0) - selfPosition) * 0.01;
                     velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
                      
                 } else if(mode == 2.0){
 
                     //mode viz 1
-                    vec3 vel =  ((texture2D( fig1, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    vec3 vel =  ((texture2D( fig1, uv ).xyz * 700.0 - 350.0) - selfPosition) * 0.15;
                     velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
  
                 } else if(mode == 3.0){
                     
                     //mode viz 2
 
-                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    vec3 vel =  ((texture2D( fig2, uv ).xyz * 700.0 - 350.0) - selfPosition) * 0.15;
                     velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
  
                 } else if(mode == 4.0){
 
                     //mode viz 3
-                    vec3 vel =  ((texture2D( fig3, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    vec3 vel =  ((texture2D( fig3, uv ).xyz * 700.0 - 350.0) - selfPosition) * 0.15;
                     velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
  
                 } else if(mode == 5.0){
 
                     //mode viz 4
-                    vec3 vel =  ((texture2D( fig4, uv ).xyz * 800.0 - 400.0) - selfPosition) * 0.15;
+                    vec3 vel =  ((texture2D( fig4, uv ).xyz * 700.0 - 350.0) - selfPosition) * 0.15;
                     velTarget = velTarget * (1.0 - fadeSq) + vel * fadeSq;
  
                 } 
@@ -728,7 +728,7 @@
 
                     }
 
-                    this.scale( 0.8, 0.8, 0.8 );
+                    this.scale( 0.7, 0.7, 0.7 );
 
                 }
 
